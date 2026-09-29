@@ -13,229 +13,239 @@ class ThemGiamSat
     {
         DuskLogger::start('THÊM GIÁM SÁT');
 
-        $tongBanGhi = 0;
+        $tong = 0;
 
         try {
 
             foreach (GiamSatData::danhSach() as $gs) {
 
-                $tongBanGhi++;
+                $tong++;
 
-                DuskLogger::info('Nội dung: '.$gs['noi_dung']);
-                DuskLogger::info('Loại thông tin: '.$gs['loai_tt']);
-                DuskLogger::info('Chủ thể: '.$gs['chu_the']);
-                DuskLogger::info('Hình thức: '.$gs['hinh_thuc']);
+                DuskLogger::info("Nội dung: {$gs['noi_dung']}");
+                DuskLogger::info("Loại: {$gs['loai_tt']}");
+                DuskLogger::info("Chủ thể: {$gs['chu_the']}");
+                DuskLogger::info("Hình thức: {$gs['hinh_thuc']}");
 
-                $browser->visit('https://hdnd.thainguyen.gov.vn/giam-sat-nghi-quyet-hdnd/create')
-                    ->pause(1000)
+                $browser->visit(
+                    'https://hdnd.thainguyen.gov.vn/giam-sat-nghi-quyet-hdnd/create'
+                )->pause(1200);
 
-                    ->select('loai_tt', $gs['loai_tt'])
-                    ->select('chu_the', $gs['chu_the'])
-                    ->select('hinh_thuc', $gs['hinh_thuc'])
+                self::selectByText($browser,'loai_tt',$gs['loai_tt']);
+                self::selectByText($browser,'chu_the',$gs['chu_the']);
+                self::selectByText($browser,'hinh_thuc',$gs['hinh_thuc']);
 
-                    ->type('noi_dung', $gs['noi_dung']);
-                    //->type('bat_dau', $gs['bat_dau'])
-                    //->type('ket_thuc', $gs['ket_thuc']);
-                
+                $browser->type('noi_dung',$gs['noi_dung']);
+
                 $browser->script("
-                    const setDate = (name, value) => {
-                        const input = document.querySelector(`input[name=\"\${name}\"]`);
-                        if (!input) return;
-                
-                        input.value = value;
-                
-                        ['input','change','blur'].forEach(evt=>{
-                            input.dispatchEvent(new Event(evt,{bubbles:true}));
+                    const setDate=(n,v)=>{
+                        const i=document.querySelector(`input[name=\"\${n}\"]`);
+                        if(!i) return;
+                        i.value=v;
+                        ['input','change','blur'].forEach(e=>{
+                            i.dispatchEvent(new Event(e,{bubbles:true}));
                         });
                     };
-                
-                    setDate('bat_dau', '{$gs['bat_dau']}');
-                    setDate('ket_thuc', '{$gs['ket_thuc']}');
+                    setDate('bat_dau','{$gs['bat_dau']}');
+                    setDate('ket_thuc','{$gs['ket_thuc']}');
                 ");
 
-                DuskLogger::info('Đã nhập thông tin cơ bản');
+                DuskLogger::info('Đã nhập thông tin');
 
-                //Quyết định
-                if (!empty($gs['quyet_dinh'] ?? [])) {
+                // ===== Quyết định =====
+                foreach ($gs['quyet_dinh'] as $i => $qd) {
 
-                    foreach ($gs['quyet_dinh'] as $index => $qd) {
-
-                        if ($index > 0) {
-                            $browser->click('.btnAddQuyetDinh')
-                                ->pause(300);
-                        }
-
-                        $browser->script("
-                            const items = document.querySelectorAll('.quyet-dinh-item');
-                            items.forEach(i => i.removeAttribute('id'));
-                            items[items.length - 1].id = 'current-quyet-dinh';
-                        ");
-
-                        $browser->type(
-                            '#current-quyet-dinh input[name*="[ten]"]',
-                            $qd['ten']
-                        );
-
-                        $filePath = base_path('tests/Browser/File/'.$qd['file']);
-
-                        if (!file_exists($filePath)) {
-                            throw new \Exception('Không tìm thấy file: '.$filePath);
-                        }
-
-                        $browser->attach(
-                            '#current-quyet-dinh input[type="file"]',
-                            $filePath
-                        );
-
-                        DuskLogger::info(
-                            'Đã thêm quyết định: '.$qd['ten'].' - '.basename($qd['file'])
-                        );
+                    if ($i > 0) {
+                        $browser->click('.btnAddQuyetDinh')->pause(300);
                     }
 
-                } else {
+                    $browser->script("
+                        const items=document.querySelectorAll('.quyet-dinh-item');
+                        items.forEach(x=>x.removeAttribute('id'));
+                        items[items.length-1].id='qd';
+                    ");
 
-                    DuskLogger::info('Không có quyết định');
+                    $browser->type('#qd input[name*="[ten]"]',$qd['ten']);
+
+                    $browser->attach(
+                        '#qd input[type=file]',
+                        base_path('tests/Browser/File/'.$qd['file'])
+                    );
                 }
 
-                //Tài liệu đính kèm
-                if (!empty($gs['tai_lieu'] ?? [])) {
+                // ===== Tài liệu =====
+                foreach ($gs['tai_lieu'] as $i => $tl) {
 
-                    foreach ($gs['tai_lieu'] as $index => $tl) {
+                    if (empty($tl['files'])) continue;
 
-                        // Bỏ qua nhóm rỗng
-                        if (empty($tl['files'])) {
-                            DuskLogger::info(
-                                'Bỏ qua tài liệu rỗng (Danh mục '.$tl['danh_muc'].')'
-                            );
-                            continue;
-                        }
-
-                        if ($index > 0) {
-                            $browser->click('#btnAddTaiLieu')
-                                ->pause(300);
-                        }
-
-                        $browser->script("
-                            const items = document.querySelectorAll('.tai-lieu-item');
-                            items.forEach(i => i.removeAttribute('id'));
-                            items[items.length - 1].id = 'current-tai-lieu';
-                        ");
-
-                        // Chọn danh mục
-                        $browser->script("
-                            const select = document.querySelector(
-                                '#current-tai-lieu select[name*=\"[danh_muc]\"]'
-                            );
-
-                            select.value = '{$tl['danh_muc']}';
-                            select.dispatchEvent(new Event('change', { bubbles:true }));
-
-                            if (window.jQuery) {
-                                $(select).trigger('change');
-                            }
-                        ");
-
-                        // Gắn ID cho input file
-                        $browser->script("
-                            const input = document.querySelector(
-                                '#current-tai-lieu input[type=file]'
-                            );
-                            input.id = 'current-tai-lieu-file';
-                        ");
-
-                        $paths = [];
-
-                        foreach ($tl['files'] as $file) {
-
-                            $path = base_path('tests/Browser/File/'.$file);
-
-                            if (!file_exists($path)) {
-                                throw new \Exception('Không tìm thấy file: '.$path);
-                            }
-
-                            $paths[] = $path;
-                        }
-
-                        // Nếu không có file thì bỏ qua
-                        if (count($paths) === 0) {
-                            DuskLogger::info(
-                                'Bỏ qua tài liệu không có file (Danh mục '.$tl['danh_muc'].')'
-                            );
-                            continue;
-                        }
-
-                        $browser->pause(100);
-
-                        $browser->element('#current-tai-lieu-file')
-                            ->sendKeys(implode("\n", $paths));
-
-                        DuskLogger::info(
-                            'Đã thêm tài liệu: Danh mục '.$tl['danh_muc'].
-                            ' - '.implode(', ', $tl['files'])
-                        );
+                    if ($i > 0) {
+                        $browser->click('#btnAddTaiLieu')->pause(300);
                     }
 
-                } else {
+                    $browser->script("
+                        const items=document.querySelectorAll('.tai-lieu-item');
+                        items.forEach(x=>x.removeAttribute('id'));
+                        items[items.length-1].id='tl';
+                    ");
 
-                    DuskLogger::info('Không có tài liệu đính kèm');
-                }
-
-                //Đối tượng trực tiếp
-                if (!empty($gs['doi_tuong_truc_tiep'])) {
-
-                    $ids = json_encode(array_map('strval', $gs['doi_tuong_truc_tiep']));
+                    self::selectByText(
+                        $browser,
+                        '[danh_muc]',
+                        $tl['danh_muc'],
+                        '#tl select'
+                    );
 
                     $browser->script("
-                        const values = {$ids};
-                        const select = $('select[name=\"doi_tuong_truc_tiep[]\"]');
-                        select.val(values).trigger('change');
+                        document.querySelector('#tl input[type=file]')
+                        .id='uploadTL';
                     ");
+
+                    $paths=[];
+
+                    foreach($tl['files'] as $f){
+                        $paths[]=base_path('tests/Browser/File/'.$f);
+                    }
+
+                    $browser->element('#uploadTL')
+                        ->sendKeys(implode("\n",$paths));
                 }
 
-                DuskLogger::info(
-                    'Đã chọn '.count($gs['doi_tuong_truc_tiep']).' đối tượng trực tiếp'
+                // ===== Đối tượng =====
+                self::selectMultiByText(
+                    $browser,
+                    'doi_tuong_truc_tiep',
+                    $gs['doi_tuong_truc_tiep']
                 );
 
-                //Đối tượng gián tiếp
-                if (!empty($gs['doi_tuong_gian_tiep'])) {
-
-                    $ids = json_encode(array_map('strval', $gs['doi_tuong_gian_tiep']));
-
-                    $browser->script("
-                        const values = {$ids};
-                        const select = $('select[name=\"doi_tuong_gian_tiep[]\"]');
-                        select.val(values).trigger('change');
-                    ");
-                }
-
-                DuskLogger::info(
-                    'Đã chọn '.count($gs['doi_tuong_gian_tiep']).' đối tượng gián tiếp'
+                self::selectMultiByText(
+                    $browser,
+                    'doi_tuong_gian_tiep',
+                    $gs['doi_tuong_gian_tiep']
                 );
 
-                // lưu
-                $browser->press('Lưu lại')
-                    ->assertPathIs('/giam-sat-nghi-quyet-hdnd');
-                
+                DuskLogger::info(
+                    'ĐTTT: '.implode(', ',$gs['doi_tuong_truc_tiep'])
+                );
+
+                DuskLogger::info(
+                    'ĐTGT: '.implode(', ',$gs['doi_tuong_gian_tiep'])
+                );
+
+                $browser->press('Lưu lại');
+
                 DuskNotify::verify($browser);
 
-                DuskLogger::info('Hoàn thành: '.$gs['noi_dung']);
-                DuskLogger::info(str_repeat('-', 50));
+                $browser->visit(
+                    'https://hdnd.thainguyen.gov.vn/giam-sat-nghi-quyet-hdnd/create'
+                )->waitFor('textarea[name="noi_dung"]');
+
+                DuskLogger::info("Hoàn thành: {$gs['noi_dung']}");
+                DuskLogger::info(str_repeat('-',50));
             }
 
-            DuskLogger::info(
-                "ĐÃ HOÀN THÀNH {$tongBanGhi} BẢN GHI - KHÔNG GẶP LỖI"
-            );
+            DuskLogger::info("ĐÃ HOÀN THÀNH {$tong} BẢN GHI");
 
-        } catch (\Throwable $e) {
+        } catch (\Throwable $e){
 
-            DuskLogger::info(str_repeat('=', 50));
-            DuskLogger::info('HỆ THỐNG TOOL TỰ ĐỘNG GẶP LỖI!');
-            DuskLogger::info('ĐÃ NGỪNG HỆ THỐNG!');
-            DuskLogger::info("Bản ghi lỗi: {$tongBanGhi}");
-            DuskLogger::info('Chi tiết: '.$e->getMessage());
-            DuskLogger::info(str_repeat('=', 50));
+            DuskLogger::info(str_repeat('=',50));
+            DuskLogger::info("Bản ghi lỗi: {$tong}");
+            DuskLogger::info($e->getMessage());
+            DuskLogger::info(str_repeat('=',50));
 
             throw $e;
         }
+    }
+
+    // =============================
+
+    private static function selectByText(
+        Browser $browser,
+        string $name,
+        string $text,
+        ?string $selector=null
+    ): void{
+
+        $target=json_encode(trim($text));
+
+        $selector=$selector
+            ? json_encode($selector)
+            : "'select[name=\"{$name}\"]'";
+
+        $browser->script("
+            const target={$target};
+            const sel={$selector};
+
+            const select=document.querySelector(sel);
+
+            if(!select)
+                throw new Error('Không thấy select');
+
+            const opt=[...select.options].find(
+                o=>o.text.trim()===target
+            );
+
+            if(!opt)
+                throw new Error('Không tìm thấy option: '+target);
+
+            select.value=opt.value;
+
+            if(window.jQuery){
+                $(select).val(opt.value).trigger('change');
+            }
+
+            select.dispatchEvent(
+                new Event('change',{bubbles:true})
+            );
+        ");
+
+        $browser->pause(250);
+    }
+
+    private static function selectMultiByText(
+        Browser $browser,
+        string $name,
+        array $texts
+    ): void{
+
+        if(empty($texts)) return;
+
+        $json=json_encode(array_values($texts));
+
+        $browser->script("
+            const targets={$json};
+
+            const select=document.querySelector(
+                'select[name=\"{$name}[]\"]'
+            );
+
+            if(!select)
+                throw new Error('Không thấy select {$name}');
+
+            const values=[];
+
+            targets.forEach(t=>{
+
+                const opt=[...select.options].find(
+                    o=>o.text.trim()===t.trim()
+                );
+
+                if(opt){
+                    values.push(opt.value);
+                }
+            });
+
+            if(window.jQuery){
+                $(select).val(values).trigger('change');
+            }else{
+                [...select.options].forEach(o=>{
+                    o.selected=values.includes(o.value);
+                });
+
+                select.dispatchEvent(
+                    new Event('change',{bubbles:true})
+                );
+            }
+        ");
+
+        $browser->pause(400);
     }
 }

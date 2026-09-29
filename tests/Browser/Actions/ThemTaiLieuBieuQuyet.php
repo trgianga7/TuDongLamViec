@@ -137,6 +137,20 @@ class ThemTaiLieuBieuQuyet
 
                 DuskLogger::info('Ngày ban hành: '.($ngayThucTe[0] ?? ''));
 
+                //Chủ trì biểu quyết
+                if (!empty($item['chu_tri_bieu_quyet'])) {
+
+                    self::selectByTextInElement(
+                        $browser,
+                        '#documents .doc-item:last-child select.vote-chairman-select',
+                        $item['chu_tri_bieu_quyet']
+                    );
+                
+                    DuskLogger::info(
+                        'Chủ trì: '.$item['chu_tri_bieu_quyet']
+                    );
+                }        
+
                 // 5. Upload file
                 if (! empty($item['file'])) {
 
@@ -182,5 +196,38 @@ class ThemTaiLieuBieuQuyet
 
             throw $e;
         }
+    }
+
+    private static function selectByTextInElement(
+        Browser $browser,
+        string $selector,
+        string $text
+    ): void {
+    
+        if (trim($text) === '') {
+            return;
+        }
+    
+        $browser->script("
+            const select = document.querySelector(".json_encode($selector).");
+    
+            if(!select) return;
+    
+            const target = ".json_encode(trim($text)).";
+    
+            [...select.options].forEach(o => {
+                if(o.text.trim() === target){
+                    o.selected = true;
+                }
+            });
+    
+            select.dispatchEvent(new Event('change',{bubbles:true}));
+    
+            if(window.jQuery){
+                $(select).trigger('change');
+            }
+        ");
+    
+        $browser->pause(200);
     }
 }

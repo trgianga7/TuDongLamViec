@@ -32,6 +32,7 @@ class TaiLieuBieuQuyetReader
                 'tieu_de'       => trim((string)$sheet->getCell("E{$row}")->getValue()),
                 'mo_ta'         => trim((string)$sheet->getCell("F{$row}")->getValue()),
                 'file'          => trim((string)$sheet->getCell("G{$row}")->getValue()),
+                'chu_tri_bieu_quyet' => trim((string)$sheet->getCell("H{$row}")->getValue()),
             ];
         }
 

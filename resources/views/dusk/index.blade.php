@@ -2,38 +2,88 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Dusk Menu</title>
+    <title>Tool Tự Động Làm Việc</title>
+    @vite('resources/css/index.css')
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@3.4.1/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body>
 
-<div class="container" style="margin-top:40px">
+<div class="container">
 
-    <h3>Điều khiển Dusk</h3>
+    <div class="tabs">
+        <button id="tab-tool" class="tab active" onclick="switchTab('tool')">
+            🛠 Chức năng
+        </button>
 
-    <div class="form-group">
-        <label>Chọn chức năng</label>
-
-        <select id="job" class="form-control">
-            <option value="tailieu">Thêm tài liệu biểu quyết</option>
-            <option value="ketqua">Thêm kết quả giám sát</option>
-        </select>
+        <button id="tab-excel" class="tab" onclick="switchTab('excel')">
+            📄 Excel
+        </button>
     </div>
 
-    <button id="run" class="btn btn-success">
-        Chạy
-    </button>
+    <!-- ================= TOOL PAGE ================= -->
 
-    <hr>
+    <div id="tool-page">
 
-    <pre id="log"
-         style="height:500px;overflow:auto;background:#111;color:#0f0;padding:15px"></pre>
+        <div class="layout">
+
+            <div class="panel">
+
+                <h2>Danh sách chức năng</h2>
+
+                <div id="session-status" class="status">
+                    <div class="dot"></div>
+                    <div>Đang kiểm tra session...</div>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="search-action"
+                        placeholder="Tìm chức năng..."
+                        oninput="filterActions()">
+                </div>
+
+                <div id="action-list" class="grid"></div>
+
+            </div>
+
+            <div class="panel">
+
+                <h2>Realtime Log</h2>
+
+                <div id="log" class="terminal">Tool đã sẵn sàng...
+</div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ================= EXCEL PAGE ================= -->
+
+    <div id="excel-page" style="display:none">
+
+        <div class="panel">
+
+            <h2>Danh sách file Excel</h2>
+            
+            <div class="search-box">
+                <input type="text"
+                    id="search-excel"
+                    placeholder="Tìm file Excel..."
+                    oninput="filterExcel()">
+            </div>
+
+            <div id="excel-list" class="excel-grid"></div>
+
+        </div>
+
+    </div>
 
 </div>
 
-<script src="/js/ThongBaoDusk.js"></script>
+@vite('resources/js/index.js')
 
 </body>
 </html>

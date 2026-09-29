@@ -2,8 +2,8 @@
 
 namespace Tests\Browser\Reader;
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use DateTime;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class GiamSatReader
@@ -13,19 +13,17 @@ class GiamSatReader
         $sheet = IOFactory::load($path)->getActiveSheet();
 
         $rows = $sheet->toArray(null, true, true, false);
-
         $header = array_shift($rows);
 
         $data = [];
 
         foreach ($rows as $index => $row) {
 
-            if (trim((string) $row[0]) === '') {
+            if (trim((string)$row[0]) === '') {
                 continue;
             }
 
             $excelRow = $index + 2;
-            
             $item = array_combine($header, $row);
 
             // ===== Quyết định =====
@@ -42,37 +40,39 @@ class GiamSatReader
             }
 
             // ===== Tài liệu =====
-            $danhMucTL = self::tach($item['tai_lieu_danh_muc'] ?? '');
-            $fileTL    = self::tach($item['tai_lieu_file'] ?? '');
+            $danhMuc = self::tach($item['tai_lieu_danh_muc'] ?? '');
+            $files   = self::tach($item['tai_lieu_file'] ?? '');
 
             $taiLieu = [];
 
-            foreach ($danhMucTL as $i => $dm) {
+            foreach ($danhMuc as $i => $dm) {
 
-                $files = [];
+                $list = [];
 
-                if (isset($fileTL[$i]) && trim($fileTL[$i]) !== '') {
-                    $files = array_map(
+                if (!empty($files[$i])) {
+                    $list = array_map(
                         'trim',
-                        explode(',', $fileTL[$i])
+                        explode(',', $files[$i])
                     );
                 }
 
                 $taiLieu[] = [
                     'danh_muc' => $dm,
-                    'files'    => $files,
+                    'files'    => $list,
                 ];
             }
 
             $data[] = [
-                'loai_tt' => $item['loai_tt'],
-                'chu_the' => $item['chu_the'],
-                'hinh_thuc' => $item['hinh_thuc'],
-                'noi_dung' => $item['noi_dung'],
-                //'bat_dau' => $item['bat_dau'],
-                //'ket_thuc' => $item['ket_thuc'],
-                'bat_dau' => self::formatDate($sheet->getCell("G{$excelRow}")),
-                'ket_thuc' => self::formatDate($sheet->getCell("H{$excelRow}")),
+                'loai_tt' => trim($item['loai_tt']),
+                'chu_the' => trim($item['chu_the']),
+                'hinh_thuc' => trim($item['hinh_thuc']),
+                'noi_dung' => trim($item['noi_dung']),
+
+                'bat_dau' =>
+                    self::formatDate($sheet->getCell("G{$excelRow}")),
+
+                'ket_thuc' =>
+                    self::formatDate($sheet->getCell("H{$excelRow}")),
 
                 'doi_tuong_truc_tiep' =>
                     self::tach($item['doi_tuong_truc_tiep'] ?? ''),
@@ -81,8 +81,7 @@ class GiamSatReader
                     self::tach($item['doi_tuong_gian_tiep'] ?? ''),
 
                 'quyet_dinh' => $quyetDinh,
-
-                'tai_lieu' => $taiLieu,
+                'tai_lieu'   => $taiLieu,
             ];
         }
 
@@ -129,8 +128,7 @@ class GiamSatReader
 
         return array_values(
             array_filter(
-                array_map('trim', explode('|', $text)),
-                fn ($v) => $v !== ''
+                array_map('trim', explode('|', $text))
             )
         );
     }

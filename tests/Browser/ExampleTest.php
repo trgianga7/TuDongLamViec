@@ -25,11 +25,16 @@ use Tests\Browser\Actions\ThemDanhMucKienNghi_KhoaHop;
 use Tests\Browser\Actions\ThemDanhMucKienNghi_KyHop;
 use Tests\Browser\Actions\ThemDanhMucKienNghi_LinhVuc;
 use Tests\Browser\Actions\ThemNghiQuyetBanHanh;
+use Tests\Browser\Actions\ThemKienNghiCuTri;
+use Tests\Browser\Actions\ThemDonThuKhieuNai;
+use Tests\Browser\Actions\ThemLichTrinhCuocHop;
+use Tests\Browser\Actions\BieuQuyetHo;
+use Tests\Browser\Actions\ThemTiepCongDan;
 use Tests\Browser\Data\UserData;
 
 class ExampleTest extends DuskTestCase
 {
-    public function test_auto(): void
+    /*public function test_auto(): void
     {
         $this->browse(function (Browser $browser) {
 
@@ -78,6 +83,47 @@ class ExampleTest extends DuskTestCase
             //=======Quy dau tu=======================================//
 
             //ThemDuAnDangThucHien::run($browser);
+
+        });
+    }*/
+
+    public function test_auto(): void
+    {
+        $action = getenv('DUSK_ACTION') ?: 'ThemCuocHop';
+
+        $this->browse(function (Browser $browser) use ($action) {
+
+            match ($action) {
+
+                'ThemNguoiDung' => ThemNguoiDung::run($browser),    
+                'ThemKhoaHop' => ThemKhoaHop::run($browser),    
+                'ThemKyHop' => ThemKyHop::run($browser),    
+                'ThemDanhMucFile' => ThemDanhMucFile::run($browser),    
+                'ThemDonVi' => ThemDonVi::run($browser),    
+                'ThemPhongHop' => ThemPhongHop::run($browser),    
+                'ThemGiamSat' => ThemGiamSat::run($browser),    
+                'TuDongDiemDanh' => TuDongDiemDanh::run($browser),
+                'ThemNoiDungGiamSat' => ThemNoiDungGiamSat::run($browser),    
+                'ThemKetQuaGiamSat' => ThemKetQuaGiamSat::run($browser),    
+                'ThemTaiLieuBieuQuyet' => ThemTaiLieuBieuQuyet::run($browser),    
+                'ThemPhieuLayYKien' => ThemPhieuLayYKien::run($browser),   
+                'ThemCuocHopNoiBo' => ThemCuocHopNoiBo::run($browser),    
+                'ThemDoiTuongGiamSat' => ThemDoiTuongGiamSat::run($browser),    
+                'ThemChuThe' => ThemChuThe::run($browser),    
+                'TuDongDiemDanh' => TuDongDiemDanh::run($browser),    
+                'ThemCuocHop' => ThemCuocHop::run($browser),    
+                'ThemDanhMucKienNghi_KhoaHop' => ThemDanhMucKienNghi_KhoaHop::run($browser),    
+                'ThemDanhMucKienNghi_KyHop' => ThemDanhMucKienNghi_KyHop::run($browser),    
+                'ThemDanhMucKienNghi_LinhVuc' => ThemDanhMucKienNghi_LinhVuc::run($browser),    
+                'ThemNghiQuyetBanHanh' => ThemNghiQuyetBanHanh::run($browser),
+                'ThemKienNghiCuTri' => ThemKienNghiCuTri::run($browser),
+                'ThemDonThuKhieuNai' => ThemDonThuKhieuNai::run($browser),
+                'ThemLichTrinhCuocHop' => ThemLichTrinhCuocHop::run($browser),
+                'BieuQuyetHo' => BieuQuyetHo::run($browser),
+                'ThemTiepCongDan' => ThemTiepCongDan::run($browser),
+    
+                default => throw new Exception("Action không tồn tại: {$action}")
+            };
 
         });
     }
